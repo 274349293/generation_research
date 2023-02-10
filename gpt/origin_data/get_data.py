@@ -27,7 +27,7 @@ class PretrainData:
     def get_case_df(self):
         return pd.read_sql("SELECT case_id, disease, txt FROM t_case_with_tcm", self.db)
 
-    def insert_data(self):
+    def insert_case_data(self):
         self.t_case_data.to_sql(name='t_case_origin', con=sqlalchemy.create_engine(
             "mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8mb4".format(
                 'root', '123456', '172.29.28.66', 3306, 'generation_research')), if_exists='fail')

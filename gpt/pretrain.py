@@ -26,7 +26,7 @@ class MyDataSet(torch.utils.data.Dataset):
 
 def train():
     logger = TaskLogger(task_name="ner", multi_gpu=False, log_root=None).root_logger
-    _test = PretrainData(logger).insert_data()
+    _test = PretrainData(logger).insert_case_data()
     exit()
     # # nlp_data moudle
     # data_params = configer.DataModuleParams(logger)
