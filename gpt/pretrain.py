@@ -1,6 +1,7 @@
 from data_helper.get_data import PretrainData
 from utils.logger_utils import TaskLogger
 from data_helper.data_cleaning import DataCleaning
+from data_helper.tokenizer import DataTokenizer
 import torch
 from tqdm import tqdm
 
@@ -27,7 +28,7 @@ class MyDataSet(torch.utils.data.Dataset):
 
 def train():
     logger = TaskLogger(task_name="pretrain", multi_gpu=False, log_root=None).root_logger
-    _test = DataCleaning(logger).insert_case_data()
+    _test = DataTokenizer(logger).get_tokens()
     exit()
     # # nlp_data moudle
     # data_params = configer.DataModuleParams(logger)

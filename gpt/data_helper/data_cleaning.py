@@ -26,7 +26,7 @@ class DataCleaning:
     def data_cleaning(self):
         cleaning_data = []
         for item in self.t_case_origin_data:
-            case_content = item[3].replace('初步诊断:', '')
+            case_content = item[3].replace('初步诊断:', '').replace(' ', '')
             case_content = case_content[0:1000] if len(case_content) > 1000 else case_content
             cleaning_data.append([item[1], item[2], case_content])
 
