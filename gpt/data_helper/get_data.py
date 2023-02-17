@@ -8,13 +8,8 @@ import os
 
 
 def mysqldb():
-    """
-    connect db
-    """
-
     db = pymysql.connect(host="172.29.28.66", user="root", password="123456", database="dw", port=3306,
                          autocommit=False)
-
     return db
 
 

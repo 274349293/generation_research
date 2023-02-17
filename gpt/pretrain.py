@@ -1,4 +1,4 @@
-from origin_data.get_data import PretrainData
+from data_helper.get_data import PretrainData
 from utils.logger_utils import TaskLogger
 import torch
 from tqdm import tqdm
