@@ -1,14 +1,12 @@
 # -*-coding:utf-8-*-
 import hashlib
-from concurrent.futures import as_completed, ProcessPoolExecutor
-from torchvision import transforms
+import sqlalchemy
 from transformers import BertTokenizer
 import pandas as pd
 import numpy as np
 import pymysql
-import torch
+from pydantic import BaseModel
 from tqdm import tqdm
-import os
 
 
 def mysqldb():
@@ -17,7 +15,7 @@ def mysqldb():
     return db
 
 
-class AdditionalSpecialTokens:
+class AdditionalSpecialTokens(BaseModel):
     # word embedding
     space_token = "[Space]"
 
@@ -25,41 +23,29 @@ class AdditionalSpecialTokens:
     tag_task_token = "[TASK:TAG]"
 
     # segment embedding
-    comment_token = "[Comment]"
     tag_token = '[Tag]'
-    question_token = '[Question]'
-    answer_token = '[Answer]'
     content_token = '[Content]'
-    img_token = "[IMG At Here]"
-    task_token = '[TASK]'
+    img_token = "[IMG]"
     speaker1_token = '[Speaker1]'
     speaker2_token = '[Speaker2]'
-    comment1_token = "[Comment1]"
-    comment2_token = "[Comment2]"
-    comment3_token = "[Comment3]"
-    comment4_token = "[Comment4]"
-    comment5_token = "[Comment5]"
-    comment6_token = "[Comment6]"
-    comment7_token = "[Comment7]"
-    comment8_token = "[Comment8]"
-    comment9_token = "[Comment9]"
-    comment10_token = "[Comment10]"
-    article_start_token = "[ArticleStart]"
-    article_end_token = "[ArticleEnd]"
-    article_split_token = "[ArticleSplit]"
+    task1_token = '[TASK1]'
+    task2_token = '[TASK2]'
+    task3_token = '[TASK3]'
 
 
 class DataTokenizer:
     def __init__(self, logger):
         self.logger = logger
         self.db = mysqldb()
-        self.df_cleaning_data = self.get_cleaning_data()
+        self.cleaning_data = self.get_cleaning_data()
         self.vocab_path = '/home/liulei/PycharmProjects/generation_research/gpt/utils/vocab.txt'
         self.n_ctx = 1020
         self.tokenizer = BertTokenizer(vocab_file=self.vocab_path, do_lower_case=True, max_len=self.n_ctx)
         self.special_tokens_obj = AdditionalSpecialTokens()
         self.special_tokens = self.special_tokens_obj.__dict__.values()
         self.tokenizer.add_special_tokens({'additional_special_tokens': [x for x in self.special_tokens]})
+        self.content_seg_id = self.tokenizer.convert_tokens_to_ids(self.special_tokens_obj.content_token)
+        self.df_token_data = self.get_df_token_data()
 
     def get_cleaning_data(self):
         return np.array(pd.read_sql("SELECT * FROM t_case_cleaning", self.db))
@@ -77,15 +63,14 @@ class DataTokenizer:
 
         # 对文本进行tokenizer.tokenize分词
         content_tokens = self.tokenizer.tokenize(sample)
-        print(content_tokens)
 
         # 生成模型所需的input_ids和token_type_ids
         '''cls'''
         input_ids.append(self.tokenizer.cls_token_id)
-        print(input_ids)
+
         '''content'''
         input_ids.extend(self.tokenizer.convert_tokens_to_ids(content_tokens))
-        print(input_ids)
+
         '''sep'''
         input_ids.append(self.tokenizer.sep_token_id)
         token_type_ids.extend([self.content_seg_id] * len(input_ids))
@@ -98,7 +83,14 @@ class DataTokenizer:
 
         return input_ids, token_type_ids
 
-    def get_tokens(self):
-        for item in self.df_cleaning_data:
-            token_sample = self.tokenize_one_sample(item[3])
-            exit()
+    def get_df_token_data(self):
+        token_data = []
+        for item in tqdm(self.cleaning_data, desc='data tokenizer'):
+            input_ids, token_type_ids = self.tokenize_one_sample(item[3])
+            token_data.append([item[1], item[2], input_ids, token_type_ids])
+        return pd.DataFrame(token_data, columns=['case_id', 'disease', 'word_embedding', 'segment_embedding'])
+
+    def insert_case_data(self):
+        self.df_token_data.to_sql(name='t_case_token', con=sqlalchemy.create_engine(
+            "mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8mb4".format(
+                'root', '123456', '172.29.28.66', 3306, 'generation_research')), if_exists='fail')
