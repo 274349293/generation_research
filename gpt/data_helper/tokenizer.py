@@ -87,7 +87,7 @@ class DataTokenizer:
         token_data = []
         for item in tqdm(self.cleaning_data, desc='data tokenizer'):
             input_ids, token_type_ids = self.tokenize_one_sample(item[3])
-            token_data.append([item[1], item[2], input_ids, token_type_ids])
+            token_data.append([item[1], item[2], str(input_ids), str(token_type_ids)])
         return pd.DataFrame(token_data, columns=['case_id', 'disease', 'word_embedding', 'segment_embedding'])
 
     def insert_case_data(self):
